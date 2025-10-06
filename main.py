@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from pydantic import BaseModel
 #
 # import do sqlmodel para construcao da classe
@@ -100,7 +100,7 @@ def on_startup():
 
 # Creating a Person
 @app.post("/create_person/")
-def create_person(person: Pessoa, session: SessionDep) -> Pessoa:
+def create_person(person: Person, session: SessionDep) -> Person:
     session.add(person)
     session.commit()
     session.refresh(person)
