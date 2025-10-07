@@ -8,12 +8,13 @@ from sqlmodel import Field, Session, SQLModel, create_engine, select, Relationsh
 from typing import Optional, List, Annotated
 
 
+### SQLModel Classes creating
 
 # Address has to be on top because the python read top to bottom...
 
 # Criating the Address class to relate to Person
 class Address(SQLModel, table=True):
-    address_id: int | None = Field(default=None, primary_key = True)
+    address_id: int | None = Field(default=None, primary_key = True, index=True)
     logradouro: str = Field(index=True)
     numero: int = Field(index=True)
     estado: str = Field(index=True)
@@ -28,7 +29,7 @@ class Address(SQLModel, table=True):
 # table = true --> Tells SQLModel that it should represent a table in the SQL database.
 class Person(SQLModel, table=True):
     # Field(primary_key = True) tells that the ID is the primary key in the SQL database
-    person_id: int | None = Field(default=None, primary_key = True)
+    person_id: int | None = Field(default=None, primary_key = True, index=True)
     # Field(index = True) make SQLModel create a SQL index for this column (attribute)
     name: str = Field(index=True)
 
@@ -40,6 +41,10 @@ class Person(SQLModel, table=True):
     address: Optional[Address] = Relationship(back_populates="person")
 
 
+### SQLModel Classes creating
+
+
+# DATABASE CONFIG TO CONNECT TO CODE
 
 # Creating the Engine of SQLModel --> this is what holds the connections to the database
 # It's necessary just one engine object for the code to connect to the database.
@@ -66,6 +71,9 @@ SessionDep = Annotated[Session, Depends(get_session)]
 
 # Now all DB functions are created, so now i will initiate then in the application below.
 
+# DATABASE CONFIG TO CONNECT TO CODE
+
+# FAST API INSTANCE
 app = FastAPI()
 
 
@@ -101,14 +109,16 @@ def read_persons(
     persons = session.exec(select(Person).offset(offset).limit(limit)).all()
     return persons
 
-# Read one Person from database
+# Read a Person from database by id
 @app.get("/read_person/{person_id}")
 def read_person(person_id: int, session:SessionDep) -> Person:
     person = session.get(Person, person_id)
     if not person:
         raise HTTPException(status_code=404, detail="Person not found")
-    return Person
+    return person
 
+
+# Delete Person from database by id
 @app.delete("/person/{person_id}")
 def delete_person(person_id: int, session:SessionDep):
     person = session.get(Person, person_id)
@@ -119,7 +129,6 @@ def delete_person(person_id: int, session:SessionDep):
     return {"ok": True}
 
 
-
 # ADDRESS
 
 # Creating a Address
@@ -128,6 +137,15 @@ def create_address(address: Address, session: SessionDep) -> Address:
     session.add(address)
     session.commit()
     session.refresh(address)
+    return address
+
+
+# Read a Person from database by id
+@app.get("/read_address/{address_id}")
+def read_person(address_id: int, session:SessionDep) -> Address:
+    address = session.get(Address, address_id)
+    if not address:
+        raise HTTPException(status_code=404, detail="Address not found")
     return address
 
 
