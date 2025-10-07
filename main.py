@@ -1,41 +1,45 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException, Query
 from pydantic import BaseModel
 #
 # import do sqlmodel para construcao da classe
-from sqlmodel import Field, Session, SQLModel, create_engine, select
+from sqlmodel import Field, Session, SQLModel, create_engine, select, Relationship
 
-#class Person:
-#    def __init__(self, name: str):
-#        self.name = name
-
-
-#def get_person_name(one_person: Person):
-#   return one_person.name
-
-# Classe pessoa herdando BaseModel from pydantic
-#class Pessoa000(BaseModel):
-#    name:str
-#    endereco:str
-    # None = None para deixar um atributo como opcional.
-#    telefone:str | None = None
+# typing import to DB relations
+from typing import Optional, List, Annotated
 
 
-# Criando a classe Pessoa para conexao com banco de dados, usando SQLModel
-# table = true --> Tells SQLModel that it should represent a table in the SQL database.
-class Person(SQLModel, table=true):
-    # Field(primary_key = True) tells that the ID is the primary key in the SQL database
-    id: int | None = Field(default=None, primary_key = True)
-    # Field(index = True) make SQLModel create a SQL index for this column (attribute)
-    name: str = Field(index=True)
-    address: str = Field(index = True)
 
-class Address(SQLModel, table=true):
-    id: int | None = Field(default=None, primary_key = True)
+# Address has to be on top because the python read top to bottom...
+
+# Criating the Address class to relate to Person
+class Address(SQLModel, table=True):
+    address_id: int | None = Field(default=None, primary_key = True)
     logradouro: str = Field(index=True)
     numero: int = Field(index=True)
     estado: str = Field(index=True)
     cidade: str = Field(index=True)
     bairro: str = Field(index=True)
+
+    #back_populates liga Address e Person
+    person: Optional["Person"] = Relationship(back_populates="address")
+
+
+# Criando a classe Pessoa para conexao com banco de dados, usando SQLModel
+# table = true --> Tells SQLModel that it should represent a table in the SQL database.
+class Person(SQLModel, table=True):
+    # Field(primary_key = True) tells that the ID is the primary key in the SQL database
+    person_id: int | None = Field(default=None, primary_key = True)
+    # Field(index = True) make SQLModel create a SQL index for this column (attribute)
+    name: str = Field(index=True)
+
+    #foreing key from address
+    address_id: int = Field(foreign_key="address.address_id")
+
+    # relation
+    #back_populates liga Person e Address
+    address: Optional[Address] = Relationship(back_populates="person")
+
+
 
 # Creating the Engine of SQLModel --> this is what holds the connections to the database
 # It's necessary just one engine object for the code to connect to the database.
@@ -69,26 +73,6 @@ app = FastAPI()
 async def root():
     return {"message": "Hello World"}
 
-
-#@app.get("/cadastrar/{nome}/{endereco}")
-#def cadastrar(nome:str, endereco:str):
- #   return {"message": f"{nome} foi cadastrado com o endereco: {endereco}"}
-
-# creating a path operation .post declaring the class Pessoa as path/query parameter.
-#@app.post("/cadastrarPessoa/")
-#async def cadastrarPessoa(p:Pessoa):
- #   return p
-
-#@app.get("/pessoas/")
-#def listarPessoas(pessoas: list[Pessoa]):
-#    for p in pessoas:
- #       print(p)
-
-
-
-
-
-
 # WITH DATABASE
 
 # Creating Database Tables on the app inicialization
@@ -108,7 +92,6 @@ def create_person(person: Person, session: SessionDep) -> Person:
 
 
 # Read Persons from the database
-
 @app.get("/read_persons/")
 def read_persons(
     session: SessionDep,
@@ -118,6 +101,13 @@ def read_persons(
     persons = session.exec(select(Person).offset(offset).limit(limit)).all()
     return persons
 
+# Read one Person from database
+@app.get("/read_person/{person_id}")
+def read_person(person_id: int, session:SessionDep) -> Person:
+    person = session.get(Person, person_id)
+    if not Person:
+        raise HTTPException(status_code=404, detail="Person not found")
+    return Person
 
 @app.delete("/person/{person_id}")
 def delete_person(person_id: int, session:SessionDep):
@@ -142,10 +132,9 @@ def create_address(address: Address, session: SessionDep) -> Address:
 
 
 # Read Persons from the database
-
 @app.delete("/address/{address_id}")
 def delete_address(address_id: int, session:SessionDep):
-    person = session.get(Address, address_id)
+    address = session.get(Address, address_id)
     if not address:
         raise HTTPException(status_code=404, detail="Address not found")
     session.delete(address)
