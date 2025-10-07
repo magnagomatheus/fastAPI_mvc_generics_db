@@ -105,7 +105,7 @@ def read_persons(
 @app.get("/read_person/{person_id}")
 def read_person(person_id: int, session:SessionDep) -> Person:
     person = session.get(Person, person_id)
-    if not Person:
+    if not person:
         raise HTTPException(status_code=404, detail="Person not found")
     return Person
 
@@ -131,8 +131,8 @@ def create_address(address: Address, session: SessionDep) -> Address:
     return address
 
 
-# Read Persons from the database
-@app.delete("/address/{address_id}")
+# Delete address from the database
+@app.delete("/address_delete/{address_id}")
 def delete_address(address_id: int, session:SessionDep):
     address = session.get(Address, address_id)
     if not address:
