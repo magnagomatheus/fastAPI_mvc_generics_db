@@ -177,7 +177,6 @@ pyrightconfig.json
 
 
 #Codewise
-analises-concluidas
 
 #ignore database.db
 database.db
