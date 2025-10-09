@@ -1,9 +1,33 @@
-from fastapi import APIRouter, Query, Depends
-from typing import List, Annotated
-from util.database import SessionDep
-from model.dto import PersonCreate, PersonUpdate, PersonPublic
-from service.person_service import PersonService
+from fastapi import HTTPException
+from sqlmodel import Session, select
+from controller.controller_generic import create_crud_router, Hooks
+from model.models import Person, Address
+from model.dto import PersonCreate, PersonUpdate, PersonRead
 
+
+class PersonHooks(Hooks[Person, PersonCreate, PersonUpdate]):
+    def pre_create(self, payload: PersonCreate, session: Session) -> None:
+        if payload.address_id is not None and payload.address_id != 0:
+            if not session.get(Address, payload.address_id):
+                raise HTTPException(400, "Address do not exists")
+    
+    def pre_update(self, payload: PersonUpdate, session: Session, obj: Person) -> None:
+        # se vai alterar team_id, valida
+        if payload.address_id is not None:
+            if payload.address_id != 0 and not session.get(Address, payload.address_id):
+                raise HTTPException(400, "Address do not exists")
+
+router = create_crud_router(
+    model=Person,
+    create_schema=PersonCreate,
+    update_schema=PersonUpdate,
+    read_schema=PersonRead,
+    prefix="/persons",
+    tags=["persons"],
+    hooks=PersonHooks(),
+)
+
+"""
 router = APIRouter(prefix="/persons", tags=["Persons"])
 
 def get_person_service(session: SessionDep) -> PersonService:
@@ -28,3 +52,4 @@ def update_person(person_id: int, person: PersonUpdate, service: ServiceDep):
 def delete_hero(person_id: int, service: ServiceDep):
     service.delete(person_id)
     return None
+"""

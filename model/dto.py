@@ -18,6 +18,8 @@ class AddressUpdate(AddressBase):
     cidade: str | None = None
     bairro: str | None = None
 
+class AddressRead(AddressBase):
+    address_id:int
 
 
 # ---------- PERSON ----------
@@ -31,3 +33,8 @@ class PersonCreate(PersonBase):
 
 class PersonUpdate(PersonBase):
     name: str | None = None
+
+class PersonRead(PersonBase):
+    person_id:int
+    name:str
+    address_id: Optional[int] = None
