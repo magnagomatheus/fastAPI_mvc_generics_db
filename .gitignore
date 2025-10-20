@@ -180,3 +180,5 @@ pyrightconfig.json
 
 #ignore database.db
 database.db
+./venv
+./dist *
