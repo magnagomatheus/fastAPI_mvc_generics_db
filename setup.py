@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="CrudPersonAddressLIB2test",  # ⚡ Nome com hífen para o PyPI
-    version="0.1.2",
+    version="0.1.3",
     description="Biblioteca para crud+l de pessoas e endereços.",
     long_description=long_description,
     long_description_content_type="text/markdown",
